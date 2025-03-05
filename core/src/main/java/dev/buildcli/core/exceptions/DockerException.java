@@ -49,14 +49,4 @@ public class DockerException extends Exception {
         }
     }
 
-    public static class DockerfileNotFoundException extends DockerException {
-        public DockerfileNotFoundException(String message) {
-            super(message);
-        }
-
-        public DockerfileNotFoundException(String message, Throwable cause) {
-            super(message, cause);
-        }
-    }
-
 }
