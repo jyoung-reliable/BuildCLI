@@ -1,6 +1,5 @@
 package dev.buildcli.cli.commands.project.add;
 
-import dev.buildcli.core.actions.commandline.JavaProcess;
 import dev.buildcli.core.domain.BuildCLICommand;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -22,16 +21,15 @@ import java.util.logging.Logger;
 public class DockerfileCommand implements BuildCLICommand {
   private Logger logger = Logger.getLogger(DockerfileCommand.class.getName());
 
-  @Option(names = {"--name", "-n"}, description = "Name of the file to write docker build instructions.", defaultValue = "Dockerfile")
+  @Option(names = {"--name", "-n"}, description = "", defaultValue = "Dockerfile")
   private String name;
-  @Option(names = {"--from", "-f"}, description = "Specifies the base image for the docker build.", defaultValue = "openjdk:17-jdk-slim")
+  @Option(names = {"--from", "-f"}, description = "", defaultValue = "openjdk:17-jdk-slim")
   private String fromImage;
-  @Option(names = {"--port", "-p"}, description = "Specifies the port used to run the docker application", defaultValue = "8080", split = ",")
+  @Option(names = {"--port", "-p"}, description = "", defaultValue = "8080", split = ",")
   private List<Integer> ports;
-  @Option(names = {"--env", "-e"}, description = "Environment variables for docker build and runtime usage. "
-         + "Multiple variables can be passed as key=value pairs separated by ';'", defaultValue = "")
+  @Option(names = {"--env", "-e"}, description = "", defaultValue = "")
   private String envVariable;
-  @Option(names = {"--force"}, description = "Use to overwrite existing dockerfile specified by name option.", defaultValue = "false")
+  @Option(names = {"--force"}, description = "", defaultValue = "false")
   private Boolean force;
 
   @Override
@@ -41,7 +39,21 @@ public class DockerfileCommand implements BuildCLICommand {
       if (dockerfile.createNewFile() || force) {
         try (FileWriter writer = new FileWriter(dockerfile, false)) {
 
-          String[] envVars = processEnvVariables(envVariable);
+          String[] envVars = envVariable.split(";");
+          for (int i = 0; i < envVars.length; i++) {
+            if (envVars[i].contains("JAVA_TOOL_OPTIONS")) {
+              String java_tool_options = "";
+              java_tool_options = envVars[i].split("=")[1];
+              java_tool_options = validate_jvm_options(java_tool_options);
+              if (java_tool_options == null) {
+                dockerfile.delete();
+                return;
+              }
+              envVars[i] = new StringBuffer().append("JAVA_TOOL_OPTIONS=\"").append(java_tool_options).append("\"").toString();
+              continue;
+            }
+            envVars[i] = new StringBuffer(envVars[i].split("=")[0]).append("=\"").append(envVars[i].split("=")[1]).append("\"").toString();
+          }
 
           var builder = new StringBuilder("FROM ").append(fromImage).append("\n");
           builder.append("WORKDIR ").append("/app").append("\n");
@@ -49,10 +61,8 @@ public class DockerfileCommand implements BuildCLICommand {
           ports.forEach(port -> {
             builder.append("EXPOSE ").append(port).append("\n");
           });
-          if (envVars != null) {
-            for (String s: envVars) {
-              if (s != null) builder.append("ENV ").append(s).append("\n");
-            }
+          for (String s: envVars) {
+            builder.append("ENV ").append(s).append("\n");
           }
           builder.append("ENTRYPOINT ").append("[\"java\", \"-jar\", \"app.jar\"]").append("\n");
 
@@ -70,40 +80,23 @@ public class DockerfileCommand implements BuildCLICommand {
     }
   }
 
-  private String[] processEnvVariables(String envVariable) {
-    String[] envVars = null;
-    if (!"".equals(envVariable)) {
-      envVars = envVariable.split(";");
-      for (int i = 0; i < envVars.length; i++) {
-        if (envVars[i].contains("JAVA_TOOL_OPTIONS")) {
-          String java_tool_options = "";
-          java_tool_options = envVars[i].split("=")[1];
-          java_tool_options = validateJvmOptions(java_tool_options);
-          if (java_tool_options == null) {
-            envVars[i] = null;
-            continue;
-          }
-          envVars[i] = new StringBuffer().append("JAVA_TOOL_OPTIONS=\"").append(java_tool_options).append("\"").toString();
-          continue;
-        }
-        envVars[i] = new StringBuffer(envVars[i].split("=")[0]).append("=\"").append(envVars[i].split("=")[1]).append("\"").toString();
-      }
-    }
-
-    return envVars;
-  }
-
-  private String validateJvmOptions(String options) {
-    if (!"".equals(options)) {
+  private String validate_jvm_options(String options) {
+    if (!options.equals("")) {
       try {
         List<String> command = new ArrayList<>();
         command.add("java");
         command.add("--dry-run");
         command.addAll(Arrays.asList(options.split(" ")));
         command.add("-version");
-        var process = JavaProcess.createProcess("--dry-run", options, "--version");
-        var code = process.run();
+        var processBuilder = new ProcessBuilder(command);
+        var process = processBuilder.start();
+        var code = process.waitFor();
         if (code != 0) {
+          BufferedReader br = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+          String line;
+          while ((line = br.readLine()) != null) {
+            System.err.println(line);
+          }
           return null;
         }
       } catch (Exception e) {
