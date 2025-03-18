@@ -12,6 +12,7 @@ public class CommandLineRunner {
 
   public static void main(String[] args) {
     LoggingConfig.configure();
+    //PluginManager.addPluginsToClassPath();
 
     BuildCLIService.welcome();
 
