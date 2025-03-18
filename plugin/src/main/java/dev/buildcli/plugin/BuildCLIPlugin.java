@@ -1,15 +1,9 @@
 package dev.buildcli.plugin;
 
-import org.pf4j.Plugin;
+import org.pf4j.ExtensionPoint;
 
-public abstract class BuildCLIPlugin extends Plugin {
-  public BuildCLIPlugin() {
-    super();
-  }
-
-  public abstract String name();
-
-  public abstract String description();
-
-  public abstract String version();
+public interface BuildCLIPlugin extends ExtensionPoint {
+  String name();
+  String description();
+  String version();
 }
