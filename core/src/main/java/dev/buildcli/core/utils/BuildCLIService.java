@@ -20,7 +20,7 @@ import java.util.jar.Manifest;
 
 import static dev.buildcli.core.utils.BeautifyShell.content;
 
-import static dev.buildcli.core.utils.console.input.InteractiveInputUtils.confirm;
+import static dev.buildcli.core.utils.input.InteractiveInputUtils.confirm;
 
 /*
 *
@@ -36,17 +36,12 @@ import static dev.buildcli.core.utils.console.input.InteractiveInputUtils.confir
 
 public class BuildCLIService {
 
-  private static GitCommandExecutor gitExec = new GitCommandExecutor();
+  private static final GitCommandExecutor gitExec = new GitCommandExecutor();
 
   private static final String buildCLIDirectory = getBuildCLIBuildDirectory();
-  private static  String localRepository = gitExec.findGitRepository(buildCLIDirectory);
+  private static final String localRepository = gitExec.findGitRepository(buildCLIDirectory);
 
   public BuildCLIService() {
-  }
-
-  public BuildCLIService(GitCommandExecutor gitCommandExecutor, String localRepository) {
-    gitExec = gitCommandExecutor;
-    this.localRepository = localRepository;
   }
 
   public static void welcome() {
@@ -114,7 +109,7 @@ public class BuildCLIService {
         "It allows you to create, compile, manage dependencies, and run Java projects directly from the terminal, simplifying the development process.\n");
     SystemOutLogger.log("Visit the repository for more details: https://github.com/BuildCLI/BuildCLI\n");
 
-    SystemOutLogger.log(gitExec.showContributors());
+    gitExec.showContributors();
   }
 
   private static void updateBuildCLI() {
@@ -165,38 +160,20 @@ public class BuildCLIService {
 
   private static String getBuildCLIBuildDirectory() {
     try (InputStream inputStream = BuildCLIService.class.getClassLoader().getResourceAsStream("META-INF/MANIFEST.MF")) {
-      if (inputStream == null || !inputStream.toString().endsWith(".jar")) {
-        return getFallbackDirectory();
+      if (inputStream == null) {
+        throw new IllegalStateException("Manifest not found.");
       }
-      return readManifest(inputStream);
-    } catch (IOException e) {
-      throw new RuntimeException("Error while trying to read the META-INF/MANIFEST.MF", e);
-    }
-  }
-
-  private static String getFallbackDirectory() {
-    String classLocation = BuildCLIService.class
-        .getProtectionDomain()
-        .getCodeSource()
-        .getLocation()
-        .toString();
-    File location = new File(classLocation);
-    return location.getAbsolutePath();
-  }
-
-  private static String readManifest(InputStream inputStream) {
-    try {
       Manifest manifest = new Manifest(inputStream);
       Attributes attributes = manifest.getMainAttributes();
       String buildDirectory = attributes.getValue("Build-Directory");
 
       if (buildDirectory == null) {
-        throw new IllegalStateException("'Build-Directory' attribute not found in the MANIFEST.MF file.");
+        throw new IllegalStateException("Build-Directory not found in the Manifest.");
       }
 
       return buildDirectory;
-    } catch (IOException e) {
-      throw new RuntimeException("Error while trying to read the content of the MANIFEST.MF file", e);
+    } catch (Exception e) {
+      throw new RuntimeException("Error reading the Manifest.", e);
     }
   }
 

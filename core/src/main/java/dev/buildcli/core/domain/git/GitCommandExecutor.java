@@ -13,6 +13,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static dev.buildcli.core.domain.git.GitCommands.*;
 import static dev.buildcli.core.domain.git.GitCommandFormatter.*;
@@ -66,8 +68,8 @@ public class GitCommandExecutor extends GitCommandUtils {
         updateLocalRepositoryFromUpstreamWithStash(gitPath, url);
     }
 
-    public String showContributors() {
-        return getContributorsFromAPI();
+    public void showContributors() {
+        getContributorsFromAPI();
     }
 
     // TODO: improve the hotfix below
@@ -97,6 +99,11 @@ public class GitCommandExecutor extends GitCommandUtils {
                 .filter(login -> !login.equals("wrimar") && !login.equals("dependabot[bot]"))
                 .reduce((s1, s2) -> s1 + ", " + s2)
                 .orElse("");
+    }
+
+    public static void main(String[] args) {
+        System.out.println("Contributors:");
+        System.out.println(getContributorsFromAPI());
     }
 
     public String getDirectory() {
