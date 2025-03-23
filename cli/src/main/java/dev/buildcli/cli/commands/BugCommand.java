@@ -1,15 +1,12 @@
 package dev.buildcli.cli.commands;
 
 import dev.buildcli.core.domain.BuildCLICommand;
-import dev.buildcli.core.utils.JavaUtils;
-import dev.buildcli.core.utils.OS;
-import org.slf4j.LoggerFactory;
 import picocli.CommandLine.Command;
 import java.awt.Desktop;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import org.slf4j.Logger;
+import java.util.concurrent.Callable;
 
 @Command(
         name = "bug",
@@ -17,12 +14,16 @@ import org.slf4j.Logger;
         mixinStandardHelpOptions = true
 )
 public class BugCommand implements BuildCLICommand {
-    private static final Logger logger = LoggerFactory.getLogger(BugCommand.class);
+
     private static final String ISSUE_URL = "https://github.com/BuildCLI/BuildCLI/issues/new?body=";
 
     @Override
     public void run() {
         String buildCliVersion = getBuildCliVersion();
+        String os = System.getProperty("os.name");
+        String arch = System.getProperty("os.arch");
+        String javaVersion = System.getProperty("java.version");
+
         String body = """
                 ### Describe the bug
 
@@ -44,15 +45,15 @@ public class BugCommand implements BuildCLICommand {
                 - OS: %s
                 - Architecture: %s
                 - Java Version: %s
-                """.formatted(buildCliVersion, OS.getOSName(), OS.getArchitecture(), JavaUtils.getJavaVersion());
+                """.formatted(buildCliVersion, os, arch, javaVersion);
 
         String encodedBody = URLEncoder.encode(body, StandardCharsets.UTF_8);
         String fullUrl = ISSUE_URL + encodedBody;
 
         openBrowser(fullUrl);
 
-       logger.info("Opened GitHub issue template in your browser. If it didn’t open, please visit:");
-       logger.info(fullUrl);
+        System.out.println("Opened GitHub issue template in your browser. If it didn’t open, please visit:");
+        System.out.println(fullUrl);
     }
 
     private String getBuildCliVersion() {
@@ -65,11 +66,11 @@ public class BugCommand implements BuildCLICommand {
             if (Desktop.isDesktopSupported()) {
                 Desktop.getDesktop().browse(new URI(url));
             } else {
-                logger.warn("Desktop browsing not supported. Please open the following URL manually:");
-                logger.warn(url);
+                System.err.println("Desktop browsing not supported. Please open the following URL manually:");
+                System.err.println(url);
             }
         } catch (Exception e) {
-            logger.error("Failed to open browser: {}", e.getMessage(), e);
+            System.err.println("Failed to open browser: " + e.getMessage());
         }
     }
 }
