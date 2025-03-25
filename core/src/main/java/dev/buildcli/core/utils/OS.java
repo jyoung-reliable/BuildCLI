@@ -28,6 +28,10 @@ public abstract class OS {
         return System.getProperty("os.arch");
     }
 
+    public static String getJavaVersion() {
+        return System.getProperty("java.version");
+    }
+
   public static void cdDirectory(String path){
     try {
         String[] command;
