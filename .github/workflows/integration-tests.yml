@@ -43,7 +43,7 @@ jobs:
       - name: Install BuildCLI on Windows
         if: matrix.os == 'windows-latest'
         run: |
-          install.bat
+          .\install.bat
 
       - name: Install BuildCLI on macOS
         if: matrix.os == 'macos-latest'
