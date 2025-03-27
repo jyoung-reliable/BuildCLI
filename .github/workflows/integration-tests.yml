@@ -77,10 +77,10 @@ jobs:
       - name: Install BuildCLI on Ubuntu
         if: matrix.os == 'ubuntu-latest'
         run: |
-          chmod +x buildcli/artifacts/linux/buildcli
+          chmod +x artifacts/linux/buildcli
           mkdir -p $HOME/bin
-          cp buildcli/artifacts/linux/buildcli.jar $HOME/bin/
-          cp buildcli/artifacts/linux/buildcli $HOME/bin/
+          cp artifacts/linux/buildcli.jar $HOME/bin/
+          cp artifacts/linux/buildcli $HOME/bin/
           echo 'export PATH="$HOME/bin:$PATH"' >> $HOME/.bashrc
           source $HOME/.bashrc
 
@@ -88,17 +88,17 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: |
           mkdir %USERPROFILE%\bin
-          copy buildcli\artifacts\windows\buildcli.jar %USERPROFILE%\bin\
-          copy buildcli\artifacts\windows\buildcli.bat %USERPROFILE%\bin\buildcli.bat
+          copy artifacts\windows\buildcli.jar %USERPROFILE%\bin\
+          copy artifacts\windows\buildcli.bat %USERPROFILE%\bin\buildcli.bat
           setx PATH "%PATH%;%USERPROFILE%\bin"
 
       - name: Install BuildCLI on macOS
         if: matrix.os == 'macos-latest'
         run: |
-          chmod +x buildcli/artifacts/osx/buildcli
+          chmod +x artifacts/osx/buildcli
           mkdir -p $HOME/bin
-          cp buildcli/artifacts/osx/buildcli.jar $HOME/bin/
-          cp buildcli/artifacts/osx/buildcli $HOME/bin/
+          cp artifacts/osx/buildcli.jar $HOME/bin/
+          cp artifacts/osx/buildcli $HOME/bin/
           echo 'export PATH="$HOME/bin:$PATH"' >> $HOME/.zshrc
           source $HOME/.zshrc
 
