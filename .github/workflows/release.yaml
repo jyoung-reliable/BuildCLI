@@ -32,7 +32,7 @@ jobs:
           ln cli/target/buildcli.jar artifacts/linux/
           ln cli/target/buildcli.jar artifacts/osx/
           ln cli/target/buildcli.jar artifacts/windows/
-          ln -r scripts/* artifacts/
+          cp -r scripts/* artifacts/
 
       - name: Upload Linux Artifact
         run: gh release upload ${{ github.event.release.tag_name }} artifacts/linux/ --name "linux-artifact" --content-type "application/zip"
