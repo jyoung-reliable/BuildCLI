@@ -1,0 +1,44 @@
+name: Release Build and Upload
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+
+jobs:
+  build-jar:
+    runs-on: ubuntu-latest
+    name: Build JAR and Upload Artifact
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+          cache: maven
+
+      - name: Build JAR
+        run: mvn clean package -DskipTests
+
+      - name: Prepare Artifacts
+        run: |
+          mkdir -p artifacts/osx artifacts/windows artifacts/linux
+          ln cli/target/buildcli.jar artifacts/linux/
+          ln cli/target/buildcli.jar artifacts/osx/
+          ln cli/target/buildcli.jar artifacts/windows/
+          ln -r scripts/* artifacts/
+
+      - name: Upload Linux Artifact
+        run: gh release upload ${{ github.event.release.tag_name }} artifacts/linux/ --name "linux-artifact" --content-type "application/zip"
+
+      - name: Upload OSX Artifact
+        run: gh release upload ${{ github.event.release.tag_name }} artifacts/osx/ --name "osx-artifact" --content-type "application/zip"
+
+      - name: Upload Windows Artifact
+        run: gh release upload ${{ github.event.release.tag_name }} artifacts/windows/ --name "windows-artifact" --content-type "application/zip"
