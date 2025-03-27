@@ -12,7 +12,41 @@ permissions:
   contents: read
 
 jobs:
+  build-jar:
+    runs-on: ubuntu-latest
+    name: Build JAR and Upload Artifact
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+          cache: maven
+
+      - name: Build JAR
+        run: mvn clean package -DskipTests
+
+      - name: Prepare Artifacts
+        run: |
+          mkdir -p artifacts/osx artifacts/windows artifacts/linux
+          cp cli/target/buildcli.jar artifacts/osx/
+          cp cli/target/buildcli.jar artifacts/windows/
+          cp cli/target/buildcli.jar artifacts/linux/
+          cp scripts/buildcli artifacts/osx/
+          cp scripts/buildcli.bat artifacts/windows/
+          cp scripts/buildcli artifacts/linux/
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: buildcli-artifacts
+          path: artifacts/
+
   integration-tests:
+    needs: build-jar
     strategy:
       matrix:
         java: [ 21 ]
@@ -20,7 +54,7 @@ jobs:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
     runs-on: ${{ matrix.os }}
 
-    name: Test Java ${{ matrix.java }} ${{ matrix.java-distribution }} - ${{ matrix.os }}
+    name: Test BuildCLI (Java ${{ matrix.java }} ${{ matrix.java-distribution }} - ${{ matrix.os }})
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -34,26 +68,52 @@ jobs:
           distribution: ${{ matrix.java-distribution }}
           cache: maven
 
+      - name: Download Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: buildcli-artifacts
+          path: buildcli
+
       - name: Install BuildCLI on Ubuntu
         if: matrix.os == 'ubuntu-latest'
         run: |
-          chmod +x install.sh
-          ./install.sh
+          chmod +x buildcli/artifacts/linux/buildcli
+          mkdir -p $HOME/bin
+          cp buildcli/artifacts/linux/buildcli.jar $HOME/bin/
+          cp buildcli/artifacts/linux/buildcli $HOME/bin/
+          echo 'export PATH="$HOME/bin:$PATH"' >> $HOME/.bashrc
+          source $HOME/.bashrc
 
       - name: Install BuildCLI on Windows
         if: matrix.os == 'windows-latest'
         run: |
-          .\install.bat
+          mkdir %USERPROFILE%\bin
+          copy buildcli\artifacts\windows\buildcli.jar %USERPROFILE%\bin\
+          copy buildcli\artifacts\windows\buildcli.bat %USERPROFILE%\bin\buildcli.bat
+          setx PATH "%PATH%;%USERPROFILE%\bin"
 
       - name: Install BuildCLI on macOS
         if: matrix.os == 'macos-latest'
         run: |
-          chmod +x install.sh
-          ./install.sh
+          chmod +x buildcli/artifacts/osx/buildcli
+          mkdir -p $HOME/bin
+          cp buildcli/artifacts/osx/buildcli.jar $HOME/bin/
+          cp buildcli/artifacts/osx/buildcli $HOME/bin/
+          echo 'export PATH="$HOME/bin:$PATH"' >> $HOME/.zshrc
+          source $HOME/.zshrc
 
       - name: Verify BuildCLI installation
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
         run: |
           if ! buildcli version; then
             echo "BuildCLI command not found or failed to execute."
             exit 1
           fi
+
+      - name: Verify BuildCLI installation on Windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          if (-not (buildcli version)) {
+            Write-Error "BuildCLI command not found or failed to execute."
+            exit 1
+          }
