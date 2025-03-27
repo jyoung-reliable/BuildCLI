@@ -25,7 +25,6 @@ jobs:
 
       - name: Build JAR
         run: mvn clean package -DskipTests
-
       - name: Prepare Artifacts
         run: |
           mkdir -p artifacts/osx artifacts/windows artifacts/linux
@@ -34,17 +33,16 @@ jobs:
           ln cli/target/buildcli.jar artifacts/windows/
           cp -r scripts/* artifacts/
 
-      - name: Upload Linux Artifact
-        run: gh release upload ${{ github.event.release.tag_name }} artifacts/linux/
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Compress Artifacts
+        run: |
+          zip -r artifacts/linux.zip artifacts/linux/
+          zip -r artifacts/osx.zip artifacts/osx/
+          zip -r artifacts/windows.zip artifacts/windows/
+          tar -czvf artifacts/linux.tar.gz -C artifacts linux/
+          tar -czvf artifacts/osx.tar.gz -C artifacts osx/
+          tar -czvf artifacts/windows.tar.gz -C artifacts windows/
 
-      - name: Upload OSX Artifact
-        run: gh release upload ${{ github.event.release.tag_name }} artifacts/osx/
-        env:
-          GH_TOKEN: ${{ github.token }}
-
-      - name: Upload Windows Artifact
-        run: gh release upload ${{ github.event.release.tag_name }} artifacts/windows/
+      - name: Upload Artifacts
+        run: gh release upload ${{ github.event.release.tag_name }} artifacts/linux.zip artifacts/osx.zip artifacts/windows.zip artifacts/linux.tar.gz artifacts/osx.tar.gz artifacts/windows.tar.gz
         env:
           GH_TOKEN: ${{ github.token }}
