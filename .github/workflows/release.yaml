@@ -35,10 +35,10 @@ jobs:
           cp -r scripts/* artifacts/
 
       - name: Upload Linux Artifact
-        run: gh release upload ${{ github.event.release.tag_name }} artifacts/linux/ --content-type "application/zip"
+        run: gh release upload ${{ github.event.release.tag_name }} artifacts/linux/
 
       - name: Upload OSX Artifact
-        run: gh release upload ${{ github.event.release.tag_name }} artifacts/osx/ --content-type "application/zip"
+        run: gh release upload ${{ github.event.release.tag_name }} artifacts/osx/
 
       - name: Upload Windows Artifact
-        run: gh release upload ${{ github.event.release.tag_name }} artifacts/windows/ --content-type "application/zip"
+        run: gh release upload ${{ github.event.release.tag_name }} artifacts/windows/
