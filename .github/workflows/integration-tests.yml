@@ -69,10 +69,10 @@ jobs:
           cache: maven
 
       - name: Download Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/download-artifact@v4
         with:
           name: buildcli-artifacts
-          path: buildcli
+          path: artifacts/
 
       - name: Install BuildCLI on Ubuntu
         if: matrix.os == 'ubuntu-latest'
