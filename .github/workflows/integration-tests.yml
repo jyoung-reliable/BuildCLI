@@ -40,7 +40,7 @@ jobs:
           cp scripts/buildcli artifacts/linux/
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses:  actions/upload-artifact@v4
         with:
           name: buildcli-artifacts
           path: artifacts/
