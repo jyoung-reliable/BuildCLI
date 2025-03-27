@@ -1,0 +1,59 @@
+name: Integration Tests
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Run every day at midnight
+  workflow_dispatch:
+  pull_request:
+    branches:
+      [ main, develop ]
+
+permissions:
+  contents: read
+
+jobs:
+  integration-tests:
+    strategy:
+      matrix:
+        java: [ 21 ]
+        java-distribution: [ temurin ]
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+    runs-on: ${{ matrix.os }}
+
+    name: Test Java ${{ matrix.java }} ${{ matrix.java-distribution }} - ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: ${{ matrix.java-distribution }}
+          cache: maven
+
+      - name: Install BuildCLI on Ubuntu
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          chmod +x install.sh
+          ./install.sh
+
+      - name: Install BuildCLI on Windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          install.bat
+
+      - name: Install BuildCLI on macOS
+        if: matrix.os == 'macos-latest'
+        run: |
+          chmod +x install.sh
+          ./install.sh
+
+      - name: Verify BuildCLI installation
+        run: |
+          if ! buildcli version; then
+            echo "BuildCLI command not found or failed to execute."
+            exit 1
+          fi
