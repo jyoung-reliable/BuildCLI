@@ -35,9 +35,9 @@ jobs:
           cp cli/target/buildcli.jar artifacts/osx/
           cp cli/target/buildcli.jar artifacts/windows/
           cp cli/target/buildcli.jar artifacts/linux/
-          cp scripts/buildcli artifacts/osx/
-          cp scripts/buildcli.bat artifacts/windows/
-          cp scripts/buildcli artifacts/linux/
+          cp scripts/osx/buildcli artifacts/osx/
+          cp scripts/windows/buildcli.bat artifacts/windows/
+          cp scripts/linux/buildcli artifacts/linux/
 
       - name: Upload Artifacts
         uses:  actions/upload-artifact@v4
