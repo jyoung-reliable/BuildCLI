@@ -56,11 +56,6 @@ jobs:
 
     name: Test BuildCLI (Java ${{ matrix.java }} ${{ matrix.java-distribution }} - ${{ matrix.os }})
     steps:
-      - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          persist-credentials: false
-
       - name: Set up JDK ${{ matrix.java }}
         uses: actions/setup-java@v4
         with:
@@ -74,38 +69,20 @@ jobs:
           name: buildcli-artifacts
           path: artifacts/
 
-      - name: Install BuildCLI on Ubuntu
+      - name: Verify BuildCLI installation on Ubuntu
         if: matrix.os == 'ubuntu-latest'
         run: |
           chmod +x artifacts/linux/buildcli
-          mkdir -p $HOME/bin
-          cp artifacts/linux/buildcli.jar $HOME/bin/
-          cp artifacts/linux/buildcli $HOME/bin/
-          echo 'export PATH="$HOME/bin:$PATH"' >> $HOME/.bashrc
-          source $HOME/.bashrc
+          if ! ./artifacts/linux/buildcli version; then
+            echo "BuildCLI command not found or failed to execute."
+            exit 1
+          fi
 
-      - name: Install BuildCLI on Windows
-        if: matrix.os == 'windows-latest'
-        run: |
-          mkdir %USERPROFILE%\bin
-          copy artifacts\windows\buildcli.jar %USERPROFILE%\bin\
-          copy artifacts\windows\buildcli.bat %USERPROFILE%\bin\buildcli.bat
-          setx PATH "%PATH%;%USERPROFILE%\bin"
-
-      - name: Install BuildCLI on macOS
+      - name: Verify BuildCLI installation on macOS
         if: matrix.os == 'macos-latest'
         run: |
           chmod +x artifacts/osx/buildcli
-          mkdir -p $HOME/bin
-          cp artifacts/osx/buildcli.jar $HOME/bin/
-          cp artifacts/osx/buildcli $HOME/bin/
-          echo 'export PATH="$HOME/bin:$PATH"' >> $HOME/.zshrc
-          source $HOME/.zshrc
-
-      - name: Verify BuildCLI installation
-        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
-        run: |
-          if ! buildcli version; then
+          if ! ./artifacts/osx/buildcli version; then
             echo "BuildCLI command not found or failed to execute."
             exit 1
           fi
@@ -113,7 +90,7 @@ jobs:
       - name: Verify BuildCLI installation on Windows
         if: matrix.os == 'windows-latest'
         run: |
-          if (-not (buildcli version)) {
+          if (-not (artifacts\windows\buildcli.bat version)) {
             Write-Error "BuildCLI command not found or failed to execute."
             exit 1
           }
