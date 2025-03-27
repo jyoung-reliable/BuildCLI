@@ -35,12 +35,13 @@ jobs:
 
       - name: Compress Artifacts
         run: |
-          zip -r artifacts/linux.zip artifacts/linux/
-          zip -r artifacts/osx.zip artifacts/osx/
-          zip -r artifacts/windows.zip artifacts/windows/
-          tar -czvf artifacts/linux.tar.gz -C artifacts linux/
-          tar -czvf artifacts/osx.tar.gz -C artifacts osx/
-          tar -czvf artifacts/windows.tar.gz -C artifacts windows/
+          cd artifacts
+          zip -r linux.zip linux
+          zip -r osx.zip osx
+          zip -r windows.zip windows
+          tar -czvf linux.tar.gz linux
+          tar -czvf osx.tar.gz osx
+          tar -czvf windows.tar.gz windows
 
       - name: Upload Artifacts
         run: gh release upload ${{ github.event.release.tag_name }} artifacts/linux.zip artifacts/osx.zip artifacts/windows.zip artifacts/linux.tar.gz artifacts/osx.tar.gz artifacts/windows.tar.gz
