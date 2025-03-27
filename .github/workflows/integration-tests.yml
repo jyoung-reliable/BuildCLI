@@ -61,7 +61,6 @@ jobs:
         with:
           java-version: ${{ matrix.java }}
           distribution: ${{ matrix.java-distribution }}
-          cache: maven
 
       - name: Download Artifact
         uses: actions/download-artifact@v4
