@@ -68,11 +68,9 @@ class FileDownloaderTest {
     setupMockHttpClient(mockResponse);
 
     var standardOut = System.out;
-    try (
-        var outputStream = new ByteArrayOutputStream();
-        var printStream = new PrintStream(outputStream)
-    ) {
-      System.setOut(printStream);
+    try {
+      var outputStream = new java.io.ByteArrayOutputStream();
+      System.setOut(new PrintStream(outputStream));
       File file = FileDownloader.download(url);
 
       String line1 = "dev.buildcli.core.utils.net.FileDownloader -- Connecting to http://localhost/teste.txt";
@@ -138,23 +136,11 @@ class FileDownloaderTest {
   @Test
   void shouldThrowException_whenHttpRequestTimesOut() throws IOException, InterruptedException {
     HttpClient mockClient = mock(HttpClient.class);
-    when(mockClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-        .thenThrow(new InterruptedException());
+    when(mockClient.send(any(), any())).thenThrow(new InterruptedException("Timeout"));
+    httpClientStatic = mockStatic(HttpClient.class);
+    httpClientStatic.when(HttpClient::newHttpClient).thenReturn(mockClient);
 
-    var standardOut = System.out;
-    try (
-        MockedStatic<HttpClient> httpClient = mockStatic(HttpClient.class);
-        var outputStream = new ByteArrayOutputStream();
-        var printStream = new PrintStream(outputStream);
-    ) {
-      System.setOut(printStream);
-      httpClient.when(HttpClient::newHttpClient).thenReturn(mockClient);
-      File result = FileDownloader.download(url);
-      System.out.println(result);
-      assertTrue(outputStream.toString().contains("Thread was interrupted. Cleanup performed."));
-      assertNull(result);
-    } finally {
-      System.setOut(standardOut);
-    }
+    assertThrows(RuntimeException.class, () -> FileDownloader.download(url));
   }
+
 }
