@@ -41,7 +41,6 @@ Welcome to BuildCLI - Java Project Management!
 - **Build and Run Docker Container**: Builds and runs the Docker container using the generated Dockerfile.
 - **CI/CD Integration**: Automatically generates configuration files por CI/CD tools (e.g., Jenkins, GitHub Actions) and triggers pipelines based on project changes.
 - **Changelog Generation**: Automatically generates a structured changelog by analyzing the Git commit history, facilitating the understanding of changes between releases.
-- **Orchestration Commands**: BuildCLI now includes orchestration commands to automate Docker Compose configuration generation and manage container lifecycles.
 ---
 
 ## Installation
@@ -241,8 +240,8 @@ buildcli changelog --version v1.0.0 --format markdown --include feat,fix --outpu
 buildcli changelog -v v1.0.0 -f markdown -i feat,fix -o CHANGELOG.md
 ````
 
-### 12. Orchestration Commands
-BuildCLI now includes orchestration commands to automate Docker compose configuration generation and manage 
+### 12. Docker-Compose
+BuildCLI now includes orchestration commands to aoutomate Docker compose configuration generation and manage 
 container lifecycles.
 Below, you'll find a Quick Start Guide and usage examples for the new feature.
 
@@ -250,7 +249,7 @@ Below, you'll find a Quick Start Guide and usage examples for the new feature.
 
 ### Quick Start Guide
 
-### 1. Generate a Docker Compose file for your project:
+#### 1. Generate a Docker Compose file for your project:
 
 ```bash
 buildcli project add dockerCompose
@@ -264,17 +263,17 @@ This command creates a docker-compose.yml file with a primary service for your j
 image built from the enhanced Dockerfile.
 
 
-### 2. Customize Essential Parameters:
+#### 2. Customize Essential Parameters:
 
 You can customize ports, volumes, and resource limits (CPU and memory) using CLI flag. For example:
 
-#### Options:
+### Options:
 
-- `--port, -p <ports>:`
+- `--ports, -p <ports>:`
   Specify the ports to expose for the container. Format: `<host_port>:<container_port>`.
 
-- `--volume, -v <volume>:`
-  Specify the volume to mount for the container. Format: `<host_path>:<container_path>`.
+- `--volumes, -v <volumes>:`
+  Specify the volumes to mount for the container. Format: `<host_path>:<container_path>`.
 
 - `--cpu, -c <cpu_limit>:`
   Specify the CPU limit for the container.
@@ -285,10 +284,10 @@ You can customize ports, volumes, and resource limits (CPU and memory) using CLI
 - `--dockerfile, -d <dockerfile_path>:`
 - Specify the path to the Dockerfile for the container.
 
-#### Example Command
+### Example Command
 
 ```bash
-buildcli project add docker-compose --ports 8080:8080 --volumes /data:/app/data --cpu 2 --memory 512m --dockerfile /path/to/Dockerfile
+buildcli project add dockerCompose --ports 8080:8080 --volumes /data:/app/data --cpu 2 --memory 512m --dockerfile /path/to/Dockerfile
 ```
 or
 
@@ -335,7 +334,7 @@ buildcli run oc down
 ```
 
 
-### 5. Stop a specific container:
+#### 5. Stop a specific container:
 
 To stop a specific container, use the following command:
 
@@ -347,6 +346,7 @@ or
 ```bash
 buildcli oc down -n <container_name>
 ```
+
 
 ---
 
