@@ -13,6 +13,8 @@
     <modules>
         <module>cli</module>
         <module>core</module>
+        <module>plugin</module>
+        <module>hooks</module>
     </modules>
 
     <properties>
@@ -55,6 +57,8 @@
             <artifactId>mockito-junit-jupiter</artifactId>
             <version>5.5.0</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-core</artifactId>
             <version>1.5.18</version>
@@ -69,6 +73,9 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>1.5.18</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>
             <version>5.11.0</version>
