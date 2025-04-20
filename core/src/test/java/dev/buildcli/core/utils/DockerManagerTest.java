@@ -1,22 +1,16 @@
 package dev.buildcli.core.utils;
 
-import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.classic.Logger;
 import dev.buildcli.core.actions.commandline.DockerProcess;
 import dev.buildcli.core.exceptions.DockerException;
 import dev.buildcli.core.model.DockerComposeConfig;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import utilsfortest.LogbackExtension;
-import utilsfortest.LogbackLogger;
+import org.slf4j.LoggerFactory;
+import utilsForTest.TestAppender;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,22 +21,36 @@ import static dev.buildcli.core.exceptions.DockerException.DockerfileNotFoundExc
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@LogbackLogger(DockerManager.class)
 @DisplayName("DockerManager Test")
-@ExtendWith({MockitoExtension.class, LogbackExtension.class})
+@ExtendWith(MockitoExtension.class)
 class DockerManagerTest {
 
+    private TestAppender testAppender;
     private static final String DOCKERFILE_PATH = "./Dockerfile";
     private static final String DOCKER_COMPOSE_FILE_PATH = "./docker-compose.yml";
 
-    @Mock
     private DockerProcess dockerProcessMock;
-
-    @InjectMocks
     private DockerManager dockerManager;
 
+    @BeforeEach
+    void setUp() {
+        testAppender = new TestAppender();
+        testAppender.start();
+        Logger logger = (Logger) LoggerFactory.getLogger(DockerManager.class);
+        logger.addAppender(testAppender);
+
+        dockerManager = new DockerManager();
+        dockerProcessMock = mock(DockerProcess.class);
+    }
+
+    @AfterEach
+    void tearDown(){
+        testAppender.stop();
+        Logger logger = (Logger) LoggerFactory.getLogger(DockerManager.class);
+        logger.detachAndStopAllAppenders();
+    }
+
     @AfterAll
-    @DisplayName("Clean up Dockerfile and docker-compose.yml")
     static void afterAll() throws IOException {
         Files.deleteIfExists(Paths.get(DOCKERFILE_PATH));
         Files.deleteIfExists(Paths.get(DOCKER_COMPOSE_FILE_PATH));
@@ -50,31 +58,31 @@ class DockerManagerTest {
 
     @Test
     @DisplayName("Test setupDocker success")
-    void testSetupDockerSuccess(List<ILoggingEvent> logs) throws IOException {
+    void testSetupDockerSuccess() throws IOException {
        DockerManager dockerManagerSpy = spy(new DockerManager());
        doNothing().when(dockerManagerSpy).createDockerfile();
 
        dockerManagerSpy.setupDocker();
 
-       assertTrue(logs
+       assertTrue(testAppender.list
                .stream()
                .anyMatch(
                        event -> event.getFormattedMessage().contains("Dockerfile created successfully.")),
                "Expected success log not found");
 
-       assertTrue(logs.stream().anyMatch(event -> event.getFormattedMessage().contains("Use 'buildcli --docker-build")),
+       assertTrue(testAppender.list.stream().anyMatch(event -> event.getFormattedMessage().contains("Use 'buildcli --docker-build")),
                "Expected build instruction log not found");
     }
 
     @Test
     @DisplayName("Test setupDocker failure")
-    void testSetupDockerFailure(List<ILoggingEvent> logs) throws IOException {
+    void testSetupDockerFailure() throws IOException {
        DockerManager dockerManagerSpy = spy(new DockerManager());
        doThrow(new IOException()).when(dockerManagerSpy).createDockerfile();
 
        dockerManagerSpy.setupDocker();
 
-       assertTrue(logs
+       assertTrue(testAppender.list
                .stream()
                .anyMatch(
                        event -> event.getFormattedMessage().contains("Error: Could not setup Docker environment.")),
@@ -83,7 +91,7 @@ class DockerManagerTest {
 
     @Test
     @DisplayName("Test createDockerfile success")
-    void testCreateDockerfileSuccess(List<ILoggingEvent> logs) throws IOException {
+    void testCreateDockerfileSuccess() throws IOException {
         DockerManager dockerManagerSpy = spy(new DockerManager());
 
         Files.deleteIfExists(Paths.get(DOCKERFILE_PATH));
@@ -91,19 +99,19 @@ class DockerManagerTest {
         dockerManagerSpy.createDockerfile();
 
         assertTrue(Files.exists(Paths.get(DOCKERFILE_PATH)), "Dockerfile should exist");
-        assertTrue(logs.stream().anyMatch(event -> event.getFormattedMessage().equals("Dockerfile generated.")), "Expected exists log not found");
+        assertTrue(testAppender.list.stream().anyMatch(event -> event.getFormattedMessage().equals("Dockerfile generated.")), "Expected exists log not found");
     }
 
     @Test
     @DisplayName("Test createDockerfile failure (Dockerfile already exists)")
-    void testCreateDockerfileFailure(List<ILoggingEvent> logs) throws IOException {
+    void testCreateDockerfileFailure() throws IOException {
         DockerManager dockerManagerSpy = spy(new DockerManager());
 
         if(!Files.exists(Paths.get(DOCKERFILE_PATH))){
             Files.createFile(Paths.get(DOCKERFILE_PATH));
         }
         dockerManagerSpy.createDockerfile();
-        assertTrue(logs
+        assertTrue(testAppender.list
                 .stream()
                 .anyMatch(
                         event -> event.getFormattedMessage().contains("Dockerfile already exists.")),
@@ -117,7 +125,9 @@ class DockerManagerTest {
         DockerComposeConfig configMock = mock(DockerComposeConfig.class);
         when(configMock.dockerFilePath()).thenReturn("non_existent_Dockerfile");
 
-        DockerException exception = assertThrows(DockerfileNotFoundException.class, () -> DockerManager.setupDockerCompose(configMock));
+        DockerException exception = assertThrows(DockerfileNotFoundException.class, () -> {
+            DockerManager.setupDockerCompose(configMock);
+        });
 
         assertTrue(exception.getMessage().contains("Dockerfile not found:"), "Expected exception message not found");
     }
@@ -140,14 +150,18 @@ class DockerManagerTest {
         assertTrue(content.contains("app_data_volume:/app/data"), "Should create default volume mapping");
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"3000:3000", "5000:5000"})
+    @Test
     @DisplayName("Should correctly format ports section when valid ports are provided")
-    void testAppendPortsWithValidPorts(String port) {
+    void testAppendPortsWithValidPorts() {
         StringBuilder content = new StringBuilder();
-        DockerManager.appendPorts(content, List.of(port));
+        DockerManager.appendPorts(content, List.of("3000:3000", "5000:5000"));
 
-        assertTrue(content.toString().contains(port));
+        StringBuilder expected = new StringBuilder();
+        expected.append("    ports:\n");
+        expected.append("      - 3000:3000\n");
+        expected.append("      - 5000:5000\n");
+
+        assertTrue(content.toString().contains(expected));
     }
 
     @Test
@@ -195,7 +209,7 @@ class DockerManagerTest {
 
     @Test
     @DisplayName("Test upContainer success - Start containers")
-    void testUpContainerSuccess(List<ILoggingEvent> logs) throws DockerException, IOException {
+    void testUpContainerSuccess() throws DockerException, IOException {
 
         try (MockedStatic<DockerProcess> dockerProcessMockedStatic = Mockito.mockStatic(DockerProcess.class)) {
 
@@ -214,9 +228,9 @@ class DockerManagerTest {
             dockerManager.upContainer(true);
 
             // The run() is called twice: one in isDockerEngineNotRunning() and another time in the upContainer()
-            verify(dockerProcessMock, times(2)).run();
-            assertTrue(logs.stream()
-                    .anyMatch(event -> event.getFormattedMessage().contains("Successfully started container(s).")));
+            verify(dockerProcessMock, Mockito.times(2)).run();
+            assertTrue(testAppender.list.stream()
+                    .anyMatch(event -> event.getMessage().contains("Successfully started container(s).")));
         }
     }
 
@@ -227,7 +241,9 @@ class DockerManagerTest {
         when(dockerManager.isDockerEngineNotRunning()).thenReturn(false);
         when(dockerManager.getActiveContainers()).thenReturn(List.of(new String[0]));
 
-        DockerException exception = assertThrows(DockerException.NoRunningContainersException.class, () -> dockerManager.downContainer("container1"));
+        DockerException exception = assertThrows(DockerException.NoRunningContainersException.class, () -> {
+            dockerManager.downContainer("container1");
+        });
 
         assertTrue(exception.getMessage().contains("No containers are currently running."), "Expected exception message to contain 'No containers are currently running.'");
     }
@@ -238,7 +254,9 @@ class DockerManagerTest {
         dockerManager = spy(dockerManager);
         when(dockerManager.isDockerEngineNotRunning()).thenReturn(false);
 
-        DockerException exception = assertThrows(DockerException.NoRunningContainersException.class, () -> dockerManager.downContainer("container1"));
+        DockerException exception = assertThrows(DockerException.NoRunningContainersException.class, () -> {
+            dockerManager.downContainer("container1");
+        });
 
         assertTrue(exception.getMessage().contains("No containers are currently running."), "Expected exception message to contain 'No containers are currently running.'");
     }
@@ -251,7 +269,9 @@ class DockerManagerTest {
         when(dockerManager.isDockerEngineNotRunning()).thenReturn(false);
         when(dockerManager.getActiveContainers()).thenReturn(List.of("container1"));
 
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> dockerManager.downContainer("container2"));
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            dockerManager.downContainer("container2");
+        });
 
         assertTrue(exception.getMessage().contains("The specified container '" + "container2" + "' is not running." ));
     }
