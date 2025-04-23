@@ -2,14 +2,10 @@ name: CI Workflow
 
 on:
   push:
-    branches:
-      - main   
-      - develop
+    branches: [main, develop]
   pull_request:
-    branches:
-      - main
-      - develop
-      
+    branches: [main, develop]
+
 jobs:
   maven-build:
     name: Build and Test with Maven
@@ -29,15 +25,12 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.m2/repository
-          key: maven-${{ hashFiles('**/pom.xml') }}
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
-            maven-
+            ${{ runner.os }}-maven-
 
-      - name: Build with Maven
-        run: mvn clean install --no-transfer-progress
-
-      - name: Run Tests
-        run: mvn test --no-transfer-progress
+      - name: Build and Test
+        run: mvn clean verify --no-transfer-progress
 
   codeql-analysis:
     name: CodeQL Analysis
@@ -48,13 +41,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up CodeQL
+      - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: 'java'
+          languages: java
 
-      - name: Autobuild the project
-        uses: github/codeql-action/autobuild@v3
+      - name: Build (required for CodeQL)
+        run: mvn clean compile --no-transfer-progress
 
-      - name: Perform CodeQL Analysis
+      - name: Analyze Code
         uses: github/codeql-action/analyze@v3
