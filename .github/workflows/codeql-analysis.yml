@@ -9,9 +9,7 @@ on:
     branches:
       - main
       - develop
-  schedule:
-    - cron: '29 2 * * 0'  # Weekly schedule to run every Sunday at 2:29 AM UTC
-
+      
 jobs:
   maven-build:
     name: Build and Test with Maven
