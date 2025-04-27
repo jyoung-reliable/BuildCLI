@@ -1,9 +1,10 @@
 package dev.buildcli.core.constants;
+
 import dev.buildcli.core.utils.OS;
+
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-
 
 
 public class GradleConstantsTest {
@@ -15,7 +16,8 @@ public class GradleConstantsTest {
         assertEquals(expectedGradleWindows, GradleConstants.GRADLE_CMD_WINDOWS);
         assertEquals(expectedGradleUnix, GradleConstants.GRADLE_CMD_UNIX);
         
-        if(OS.isWindows()) {
+
+        if(OS.isWindows()){
             assertEquals(expectedGradleWindows, GradleConstants.GRADLE_CMD);
         } else {
             assertEquals(expectedGradleUnix, GradleConstants.GRADLE_CMD);
@@ -23,7 +25,7 @@ public class GradleConstantsTest {
     }
 
     @Test
-    void testGraddleFile() {
+    void testBuildFile() {
         String expectedFile = "build.gradle";
         assertEquals(expectedFile, GradleConstants.FILE);
     }
